@@ -33,14 +33,14 @@ func (bot *TapirBot) HandleSetReadonly24h(update *tgbotapi.Update) *ResponseErro
 
 	allowed := false
 	for _, admin := range admins {
-		if update.Message.From.ID == admin.User.ID {
+		if update.Message.From.ID == admin.User.ID && (admin.IsCreator() || admin.CanRestrictMembers) {
 			allowed = true
 			break
 		}
 	}
 
 	if !allowed {
-		err := bot.ReplyMessage(update.Message, AdminRequired)
+		err := bot.ReplyMessage(update.Message, RestrictPermissionRequired)
 		if err != nil {
 			return NewResponseError(SendError, err)
 		}
