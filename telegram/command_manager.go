@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"log"
 	"strings"
 )
 
@@ -10,36 +10,46 @@ type MessageHandlerFunc func(update *tgbotapi.Update) *ResponseError
 
 type CommandManager struct {
 	handlers map[string]MessageHandlerFunc
-	api *tgbotapi.BotAPI
+	tapir *TapirBot
 }
 
-func NewCommandManager(api *tgbotapi.BotAPI) *CommandManager {
+func NewCommandManager(tapir *TapirBot) *CommandManager {
 	return &CommandManager{
 		handlers: make(map[string]MessageHandlerFunc),
-		api: api,
+		tapir: tapir,
 	}
 }
 
-func (m *CommandManager) ProcessCommand(update *tgbotapi.Update) (*ResponseError, bool) {
+func (m *CommandManager) ProcessCommand(update *tgbotapi.Update) {
 	if update.Message == nil {
-		return nil, true
+		return
 	}
 
-	if !(strings.HasPrefix(update.Message.Text, "/") && strings.HasSuffix(update.Message.Text, "@" + m.api.Self.UserName)) {
-		return nil, true
+	if !(strings.HasPrefix(update.Message.Text, "/") && strings.HasSuffix(update.Message.Text, "@" + m.tapir.api.Self.UserName)) {
+		return
 	}
 
 	parts := strings.Split(update.Message.Text, "@")
 	if len(parts) < 2 {
-		return NewResponseError(CommandProcessingError, errors.New("len(parts) < 2")), false
+		_ = m.tapir.ReplyMessage(update.Message, CommandProcessingError)
+		return
 	}
 
 	handlerFunc, ok := m.handlers[parts[0]]
 	if !ok {
-		return NewResponseError(CommandNotFoundError, errors.New("command not found")), false
+		_ = m.tapir.ReplyMessage(update.Message, CommandNotFoundError)
+		return
 	}
 
-	return handlerFunc(update), false
+	err := handlerFunc(update)
+	if err != nil {
+		if err.error != nil {
+			log.Println(err.error)
+		}
+		if err.ResponseMessage() != "" {
+			_ = m.tapir.ReplyMessage(update.Message, err.ResponseMessage())
+		}
+	}
 }
 
 

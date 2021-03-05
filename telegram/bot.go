@@ -8,6 +8,7 @@ import (
 type TapirBot struct {
 	api *tgbotapi.BotAPI
 	cm *CommandManager
+	mm *MediaManager
 	pl *Pipeline
 }
 
@@ -18,14 +19,15 @@ func NewTapirBot(token string) (*TapirBot, error) {
 	}
 	bot := TapirBot{
 		api: api,
-		cm:  NewCommandManager(api),
 		pl: NewPipeline(),
 	}
+	bot.cm = NewCommandManager(&bot)
+	bot.mm = NewMediaManager(&bot)
 	return &bot, nil
 }
 
 func (bot *TapirBot) Init() {
-	bot.pl.AddProcessors(bot.cm.ProcessCommand)
+	bot.pl.AddProcessors(bot.mm.ProcessMedia, bot.cm.ProcessCommand)
 	bot.cm.RegisterHandler("/ping", bot.HandlePing)
 }
 

@@ -2,7 +2,7 @@ package telegram
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
-type MessageProcessorFunc func(update *tgbotapi.Update) (*ResponseError, bool)
+type MessageProcessorFunc func(update *tgbotapi.Update)
 
 type Pipeline struct {
 	processors []MessageProcessorFunc
@@ -18,10 +18,7 @@ func (p *Pipeline) AddProcessors(processors ...MessageProcessorFunc) {
 
 func (p *Pipeline) Process(update *tgbotapi.Update) *ResponseError {
 	for _, processorFunc := range p.processors {
-		responseError, processed := processorFunc(update)
-		if processed {
-			return responseError
-		}
+		processorFunc(update)
 	}
 
 	return nil
