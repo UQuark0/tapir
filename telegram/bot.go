@@ -36,6 +36,7 @@ func NewTapirBot(token string, configReader io.Reader) (*TapirBot, error) {
 func (bot *TapirBot) Init() {
 	bot.pipeline.AddProcessors(bot.mediaManager.ProcessMedia, bot.commandManager.ProcessCommand)
 	bot.commandManager.RegisterHandler("/ping", bot.HandlePing)
+	bot.commandManager.RegisterHandler("/set_readonly_24h", bot.HandleSetReadonly24h)
 }
 
 func (bot *TapirBot) Run() error {
