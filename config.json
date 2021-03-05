@@ -1,0 +1,16 @@
+{
+  "DefaultConfig": {
+    "NthMediaRule": {
+      "Count": 4,
+      "ReadonlyDuration": 24
+    }
+  },
+  "ChatConfigs": {
+    "tapir_20_test": {
+      "NthMediaRule": {
+        "Count": 2,
+        "ReadonlyDuration": 1
+      }
+    }
+  }
+}

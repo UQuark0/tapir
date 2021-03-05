@@ -6,7 +6,12 @@ import (
 )
 
 func main() {
-	tapir, err := telegram.NewTapirBot(os.Getenv("TAPIR_BOT_TOKEN"))
+	configFile, err := os.Open("./config.json")
+	if err != nil {
+		panic(err)
+	}
+	defer configFile.Close()
+	tapir, err := telegram.NewTapirBot(os.Getenv("TAPIR_BOT_TOKEN"), configFile)
 	if err != nil {
 		panic(err)
 	}

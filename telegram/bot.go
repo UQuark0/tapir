@@ -2,33 +2,40 @@ package telegram
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"io"
 	"log"
 )
 
 type TapirBot struct {
-	api *tgbotapi.BotAPI
-	cm *CommandManager
-	mm *MediaManager
-	pl *Pipeline
+	api            *tgbotapi.BotAPI
+	commandManager *CommandManager
+	mediaManager   *MediaManager
+	configManager  *TapirConfigManager
+	pipeline       *Pipeline
 }
 
-func NewTapirBot(token string) (*TapirBot, error) {
+func NewTapirBot(token string, configReader io.Reader) (*TapirBot, error) {
 	api, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}
 	bot := TapirBot{
-		api: api,
-		pl: NewPipeline(),
+		api:      api,
+		pipeline: NewPipeline(),
 	}
-	bot.cm = NewCommandManager(&bot)
-	bot.mm = NewMediaManager(&bot)
+	bot.commandManager = NewCommandManager(&bot)
+	bot.mediaManager = NewMediaManager(&bot)
+	configManager, err := NewTapirConfigManager(configReader)
+	if err != nil {
+		return nil, err
+	}
+	bot.configManager = configManager
 	return &bot, nil
 }
 
 func (bot *TapirBot) Init() {
-	bot.pl.AddProcessors(bot.mm.ProcessMedia, bot.cm.ProcessCommand)
-	bot.cm.RegisterHandler("/ping", bot.HandlePing)
+	bot.pipeline.AddProcessors(bot.mediaManager.ProcessMedia, bot.commandManager.ProcessCommand)
+	bot.commandManager.RegisterHandler("/ping", bot.HandlePing)
 }
 
 func (bot *TapirBot) Run() error {
@@ -40,7 +47,7 @@ func (bot *TapirBot) Run() error {
 	}
 
 	for update := range updatesChan {
-		responseError := bot.pl.Process(&update)
+		responseError := bot.pipeline.Process(&update)
 		if responseError != nil {
 			if responseError.responseMessage != "" {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, responseError.ResponseMessage())
